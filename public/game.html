@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ferengi Tanga Game</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            transition: background-color 0.5s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            background: url('./rom.jpg') no-repeat center center fixed; 
+            background-size: cover;
+            opacity: 0.5;
+            z-index: -1;
+        }
+        body.blink::before {
+            animation: blink 1s linear infinite;
+        }
+        #play-button {
+            margin-top: 10px;
+        }
+        .winner {
+            animation: blink 1s linear infinite;
+        }
+        @keyframes blink {
+            0% {opacity: 0;}
+            50% {opacity: 1;}
+            100% {opacity: 0;}
+        }
+        #images-container {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+        }
+        #images-container img {
+            display: none;
+        }
+        #header-container {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            align-items: center;
+        }
+        #header-container h1, #header-container #quark-image {
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div id="header-container">
+        <h1>Ferengi Tanga Game</h1>
+        <img id="quark-image" width="100" src="./quark.jpg" style="display: none;" />
+    </div>
+    <p id="latinum">You have 100 bars of gold-pressed latinum</p>
+    <input type="number" id="bet" min="1" value="1">
+    <button id="play-button">Play</button>
+    <p id="game-result"></p>
+    <div id="images-container">
+        <img id="klingon-image" src="./klingon.jpg" width="100" />
+    </div>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('#play-button').click(function() {
+                const bet = parseInt($('#bet').val());
+                const playerLatinum = parseInt($('#latinum').text().split(' ')[2]);
+                if (bet > playerLatinum) {
+                    $('#game-result').text("You don't have enough latinum for this bet!");
+                    $('body').addClass('blink');
+                    return;
+                }
+                $('body').removeClass('blink');
+                $.ajax({
+                    url: '/play',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ bet: bet }),
+                    success: function(data) {
+                        $('#game-result').text(data.message);
+                        $('#latinum').text('You have ' + data.playerLatinum + ' bars of gold-pressed latinum');
+                        $('body').css('background-color', '#' + Math.floor(Math.random()*16777215).toString(16));
+                        if (data.playerLatinum > playerLatinum) {
+                            $('#game-result').addClass('winner');
+                            $('#quark-image').show();
+                            $('#klingon-image').hide();
+                        } else {
+                            $('#game-result').removeClass('winner');
+                            $('#quark-image').hide();
+                            $('#klingon-image').show();
+                        }
+                    },
+                    error: function(error) {
+                        console.error('Error:', error);
+                    },
+                });
+            });
+        });
+    </script>
+</body>
+</html>
